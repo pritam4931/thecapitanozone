@@ -1,0 +1,46 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A football gear product in the store catalog",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique product dynamic ID" },
+        "cat": { "type": "string", "description": "Category of the product" },
+        "bootType": { "type": "string", "description": "Subcategory for soccer boots" },
+        "jerseyType": { "type": "string", "description": "Subcategory for jerseys" },
+        "name": { "type": "string", "description": "Name of the product" },
+        "sz": { "type": "string", "description": "Available size specifications" },
+        "price": { "type": "number", "description": "Sale price of the product" },
+        "was": { "type": "number", "description": "Original price of the product" },
+        "disc": { "type": "number", "description": "Discount rate percentage" },
+        "tag": { "type": "string", "description": "Product tag" },
+        "image": { "type": "string", "description": "Base64 string or image web URL" },
+        "brand": { "type": "string", "description": "Brand of product" },
+        "description": { "type": "string", "description": "Detailed description of product features" }
+      },
+      "required": ["cat", "name", "price"]
+    },
+    "StoreSettings": {
+      "title": "StoreSettings",
+      "description": "Global store configuration",
+      "type": "object",
+      "properties": {
+        "whatsappNumber": { "type": "string", "description": "WhatsApp destination mobile number for ordering" },
+        "storeName": { "type": "string", "description": "Visual name of the store" },
+        "currencySymbol": { "type": "string", "description": "Currency descriptor symbol" }
+      },
+      "required": ["whatsappNumber", "storeName", "currencySymbol"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Public shared catalog of store products"
+    },
+    "/settings/{settingsId}": {
+      "schema": "StoreSettings",
+      "description": "Global store configuration and settings"
+    }
+  }
+}

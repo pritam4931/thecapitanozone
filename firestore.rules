@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net (Pillar 4 Phase 4 Default-Deny Catch-All)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Global Security Helper Primitives
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Bootstrapped admin check using verified email from runtime metadata
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email.lower() == 'pdey4931@gmail.com' && request.auth.token.email_verified == true;
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+    
+    // Strict schema blueprint validation for products (Pillar 2)
+    function isValidProduct(data) {
+      return data.keys().hasAll(['cat', 'name', 'price'])
+        && data.cat is string 
+        && data.cat.size() <= 50
+        && data.name is string 
+        && data.name.size() <= 250
+        && data.price is number 
+        && data.price > 0
+        && (!('brand' in data) || (data.brand is string && data.brand.size() <= 100))
+        && (!('description' in data) || (data.description is string && data.description.size() <= 2000))
+        && (!('sz' in data) || (data.sz is string && data.sz.size() <= 50))
+        && (!('bootType' in data) || (data.bootType is string && data.bootType.size() <= 50))
+        && (!('jerseyType' in data) || (data.jerseyType is string && data.jerseyType.size() <= 50))
+        && (!('tag' in data) || (data.tag is string && data.tag.size() <= 50))
+        && (!('was' in data) || (data.was is number))
+        && (!('disc' in data) || (data.disc is number && data.disc >= 0 && data.disc <= 100))
+        && (!('image' in data) || (data.image is string && data.image.size() <= 2000000));
+    }
+    
+    // Strict schema blueprint validation for store settings
+    function isValidStoreSettings(data) {
+      return data.keys().hasAll(['whatsappNumber', 'storeName', 'currencySymbol'])
+        && data.whatsappNumber is string
+        && data.whatsappNumber.size() <= 25
+        && data.storeName is string
+        && data.storeName.size() <= 150
+        && data.currencySymbol is string
+        && data.currencySymbol.size() <= 10;
+    }
+    
+    // ─── FIRESTORE COLLECTIONS MATCHES ───
+    
+    match /products/{productId} {
+      allow read: if true; // Public unauthenticated read allowed for browser browsing (Pillar 8)
+      allow create: if isAdmin() && isValidId(productId) && isValidProduct(incoming());
+      allow update: if isAdmin() && isValidId(productId) && isValidProduct(incoming());
+      allow delete: if isAdmin() && isValidId(productId);
+    }
+    
+    match /settings/{settingsId} {
+      allow read: if true; // Public unauthenticated read allowed for shop settings/contact
+      allow create: if isAdmin() && isValidId(settingsId) && isValidStoreSettings(incoming());
+      allow update: if isAdmin() && isValidId(settingsId) && isValidStoreSettings(incoming());
+      allow delete: if isAdmin() && isValidId(settingsId);
+    }
+  }
+}
